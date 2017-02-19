@@ -10,7 +10,8 @@
 
 import os
 import redis
-import urlparse
+#import urlparse     # The urlparse module is renamed to urllib.parse in Python 3
+from urllib.parse import urlparse
 from werkzeug.wrappers import Request, Response
 from werkzeug.routing import Map, Rule
 from werkzeug.exceptions import HTTPException, NotFound
@@ -23,12 +24,12 @@ class Shortly():
 
     def __init__(self, config):
         self.redis = redis.Redis(config['redis_host'], config['redis_port'])
-        template_path = os.path.join(os.path.dirname(__filename__), 'templates')
+        template_path = os.path.join(os.path.dirname(__file__), 'templates')
         self.jinja_env = Environment(loader=FileSystemLoader(template_path),
                                     autoescape=True)
         self.url_map = Map([
             Rule('/', endpoint='new_url'),
-            Rule('/<short_id>', endpoint='follow_short_link')
+            Rule('/<short_id>', endpoint='follow_short_link'),
             Rule('/<short_id>+', endpoint='short_link_details')
         ])
 
@@ -44,7 +45,7 @@ class Shortly():
             endpoint, values = adapter.match()  # 匹配方法将会返回 endpoint 和一个 URL 值字典。
             # 所有的 URL 参数做作为关键字参数调用 on_ + endpoint 函数可以返回响应对象
             return getattr(self, 'on_' + endpoint)(request, **values)   
-        except HTTPException, e:
+        except HTTPException(e):
             return e
 
     def on_new_url(self, request):
@@ -105,7 +106,7 @@ class Shortly():
         return self.wsgi_app(environ, start_response)
 
 def is_valid_url(url):
-    parts = urlparse.urlparse(url)
+    parts = urlparse(url)
     return parts.scheme in ('http', 'https')
 
 def base36_encode(number):
